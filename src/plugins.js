@@ -1,7 +1,11 @@
 const attachments = require("./data/attachments");
 const logs = require("./data/logs");
 const { beforeNewThread } = require("./hooks/beforeNewThread");
+const { beforeNewMessageReceived } = require("./hooks/beforeNewMessageReceived");
+const { afterNewMessageReceived } = require("./hooks/afterNewMessageReceived");
 const { afterThreadClose } = require("./hooks/afterThreadClose");
+const { afterThreadCloseScheduled } = require("./hooks/afterThreadCloseScheduled");
+const { afterThreadCloseScheduleCanceled } = require("./hooks/afterThreadCloseScheduleCanceled");
 const formats = require("./formatters");
 const webserver = require("./modules/webserver");
 const childProcess = require("child_process");
@@ -119,13 +123,9 @@ module.exports = {
   },
 
   /**
-   * @param bot
-   * @param knex
-   * @param config
-   * @param commands
    * @returns {PluginAPI}
    */
-  getPluginAPI({ bot, knex, config, commands }) {
+  getPluginAPI({ bot, knex, commands }) {
     return {
       bot,
       knex,
@@ -151,7 +151,11 @@ module.exports = {
       },
       hooks: {
         beforeNewThread,
+        beforeNewMessageReceived,
+        afterNewMessageReceived,
         afterThreadClose,
+        afterThreadCloseScheduled,
+        afterThreadCloseScheduleCanceled,
       },
       formats,
       webserver,

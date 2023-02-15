@@ -5,8 +5,38 @@ const threads = require("../data/threads");
 const blocked = require("../data/blocked");
 const { messageQueue } = require("../queue");
 const { getLogUrl, getLogFile, getLogCustomResponse } = require("../data/logs");
+const {THREAD_MESSAGE_TYPE} = require("../data/constants");
 
 module.exports = ({ bot, knex, config, commands }) => {
+  async function getMessagesAmounts(thread) {
+    const messages = await thread.getThreadMessages();
+    const chatMessages = [];
+    const toUserMessages = [];
+    const fromUserMessages = [];
+
+    messages.forEach(message => {
+      switch (message.message_type) {
+        case THREAD_MESSAGE_TYPE.CHAT:
+          chatMessages.push(message);
+          break;
+
+        case THREAD_MESSAGE_TYPE.TO_USER:
+          toUserMessages.push(message);
+          break;
+
+        case THREAD_MESSAGE_TYPE.FROM_USER:
+          fromUserMessages.push(message);
+          break;
+      }
+    });
+
+    return [
+      `**${fromUserMessages.length}** message${fromUserMessages.length !== 1 ? "s" : ""} from the user`,
+      `, **${toUserMessages.length}** message${toUserMessages.length !== 1 ? "s" : ""} to the user`,
+      ` and **${chatMessages.length}** internal chat message${chatMessages.length !== 1 ? "s" : ""}.`,
+    ].join("");
+  }
+
   async function sendCloseNotification(thread, body) {
     const logCustomResponse = await getLogCustomResponse(thread);
     if (logCustomResponse) {
@@ -14,6 +44,8 @@ module.exports = ({ bot, knex, config, commands }) => {
       await utils.postLog(logCustomResponse.content, logCustomResponse.file);
       return;
     }
+
+    body = `${body}\n${await getMessagesAmounts(thread)}`;
 
     const logUrl = await getLogUrl(thread);
     if (logUrl) {
@@ -86,7 +118,7 @@ module.exports = ({ bot, knex, config, commands }) => {
       closedBy = "the user";
     } else {
       // A staff member is closing the thread
-      if (! utils.messageIsOnInboxServer(msg)) return;
+      if (! await utils.messageIsOnInboxServer(bot, msg)) return;
       if (! utils.isStaff(msg.member)) return;
 
       thread = await threads.findOpenThreadByChannelId(msg.channel.id);

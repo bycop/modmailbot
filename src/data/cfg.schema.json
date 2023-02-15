@@ -83,8 +83,12 @@
     },
     "statusType": {
       "type": "string",
-      "enum": ["playing", "watching", "listening"],
+      "enum": ["playing", "watching", "listening", "streaming"],
       "default": "playing"
+    },
+    "statusUrl": {
+      "type": "string",
+      "default": ""
     },
     "responseMessage": {
       "$ref": "#/definitions/multilineString",
@@ -102,7 +106,7 @@
       "type": "string"
     },
     "mentionRole": {
-      "type": "string",
+      "$ref": "#/definitions/stringArray",
       "default": "none"
     },
     "pingOnBotMention": {
@@ -122,6 +126,10 @@
       "default": false
     },
     "alwaysReplyAnon": {
+      "$ref": "#/definitions/customBoolean",
+      "default": false
+    },
+    "forceAnon": {
       "$ref": "#/definitions/customBoolean",
       "default": false
     },
@@ -173,6 +181,10 @@
       "$ref": "#/definitions/customBoolean",
       "default": true
     },
+    "updateMessagesLive": {
+      "$ref": "#/definitions/customBoolean",
+      "default": false
+    },
     "allowBlock": {
       "$ref": "#/definitions/customBoolean",
       "default": true
@@ -196,6 +208,7 @@
       "type": "string"
     },
     "serverGreetings": {
+      "type": "object",
       "patternProperties": {
         "^\\d+$": {
           "type": "object",
@@ -208,8 +221,7 @@
             }
           }
         }
-      },
-      "default": {}
+      }
     },
     "guildGreetings": {
       "$comment": "Alias for serverGreetings",
@@ -246,6 +258,11 @@
       "minimum": 0
     },
 
+    "relayInlineReplies": {
+      "$ref": "#/definitions/customBoolean",
+      "default": true
+    },
+
     "attachmentStorage": {
       "type": "string",
       "default": "original"
@@ -255,6 +272,7 @@
     },
 
     "categoryAutomation": {
+      "type": "object",
       "properties": {
         "newThread": {
           "type": "string"
@@ -272,8 +290,7 @@
           "$comment": "Alias for categoryAutomation.newThreadFromServer",
           "$ref": "#/properties/categoryAutomation/properties/newThreadFromServer"
         }
-      },
-      "default": {}
+      }
     },
 
     "updateNotifications": {
@@ -295,6 +312,7 @@
     },
 
     "commandAliases": {
+      "type": "object",
       "patternProperties": {
         "^.+$": {
           "type": "string"
@@ -315,6 +333,31 @@
     "createThreadOnMention": {
       "$ref": "#/definitions/customBoolean",
       "default": false
+    },
+
+    "blockMessage": {
+      "type": "string",
+      "default": null
+    },
+
+    "timedBlockMessage": {
+      "type": "string",
+      "default": null
+    },
+
+    "unblockMessage": {
+      "type": "string",
+      "default": null
+    },
+
+    "timedUnblockMessage": {
+      "type": "string",
+      "default": null
+    },
+
+    "blockedReply": {
+      "type": "string",
+      "default": null
     },
 
     "notifyOnMainServerLeave": {
@@ -357,6 +400,11 @@
       "default": null
     },
 
+    "breakFormattingForNames": {
+      "$ref": "#/definitions/customBoolean",
+      "default": true
+    },
+
     "autoAlert": {
       "$ref": "#/definitions/customBoolean",
       "default": false
@@ -374,6 +422,11 @@
     },
 
     "showResponseMessageInThreadChannel": {
+      "$ref": "#/definitions/customBoolean",
+      "default": true
+    },
+
+    "allowNotes": {
       "$ref": "#/definitions/customBoolean",
       "default": true
     },

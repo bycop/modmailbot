@@ -28,7 +28,7 @@ module.exports = ({ bot, knex, config, commands }) => {
    * When a staff member uses a snippet (snippet prefix + trigger word), find the snippet and post it as a reply in the thread
    */
   bot.on("messageCreate", async msg => {
-    if (! utils.messageIsOnInboxServer(msg)) return;
+    if (! await utils.messageIsOnInboxServer(bot, msg)) return;
     if (! utils.isStaff(msg.member)) return;
 
     if (msg.author.bot) return;
@@ -57,10 +57,17 @@ module.exports = ({ bot, knex, config, commands }) => {
       }
     }
 
+    if (config.forceAnon) {
+      isAnonymous = true;
+    }
+
     const thread = await threads.findByChannelId(msg.channel.id);
     if (! thread) return;
 
-    let [, trigger, rawArgs] = msg.content.slice(snippetPrefix.length).match(/(\S+)(?:\s+(.*))?/s);
+    const snippetInvoke = msg.content.slice(snippetPrefix.length);
+    if (! snippetInvoke) return;
+
+    let [, trigger, rawArgs] = snippetInvoke.match(/(\S+)(?:\s+(.*))?/s);
     trigger = trigger.toLowerCase();
 
     const snippet = await snippets.get(trigger);
@@ -70,7 +77,7 @@ module.exports = ({ bot, knex, config, commands }) => {
     args = args.map(arg => arg.value);
     const rendered = renderSnippet(snippet.body, args);
 
-    const replied = await thread.replyToUser(msg.member, rendered, [], isAnonymous);
+    const replied = await thread.replyToUser(msg.member, rendered, [], isAnonymous, msg.messageReference);
     if (replied) msg.delete();
   });
 
