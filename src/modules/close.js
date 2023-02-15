@@ -166,7 +166,7 @@ module.exports = ({ bot, knex, config, commands }) => {
       }
 
       // Regular close
-      closedBy = msg.author.username;
+      closedBy = msg.author;
     }
 
     // Send close message (unless suppressed with a silent close)
@@ -175,9 +175,9 @@ module.exports = ({ bot, knex, config, commands }) => {
       await thread.sendSystemMessageToUser(closeMessage).catch(() => {});
     }
 
-    await thread.close(suppressSystemMessages, silentClose);
+    await thread.close(suppressSystemMessages, silentClose, closedBy);
 
-    await sendCloseNotification(thread, `Modmail thread #${thread.thread_number} with ${thread.user_name} (${thread.user_id}) was closed by ${closedBy}`);
+    await sendCloseNotification(thread, `Modmail thread #${thread.thread_number} with ${thread.user_name} (${thread.user_id}) was closed by ${closedBy.username}`);
   }, {
     options: [
       { name: "silent", shortcut: "s", isSwitch: true },

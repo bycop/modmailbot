@@ -744,7 +744,7 @@ class Thread {
   /**
    * @returns {Promise<void>}
    */
-  async close(suppressSystemMessage = false, silent = false) {
+  async close(suppressSystemMessage = false, silent = false, closedBy = null) {
     if (! suppressSystemMessage) {
       console.log(`Closing thread ${this.id}`);
 
@@ -760,7 +760,10 @@ class Thread {
     await knex("threads")
       .where("id", this.id)
       .update({
-        status: THREAD_STATUS.CLOSED
+        status: THREAD_STATUS.CLOSED,
+        close_id: closedBy ? closedBy.id : null,
+        close_name: closedBy ? `${closedBy.username}#${closedBy.discriminator}` : null,
+        close_at: knex.fn.now()
       });
 
     // Delete channel
