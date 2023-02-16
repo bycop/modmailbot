@@ -1,4 +1,5 @@
 const config = require('../../src/cfg');
+const humanizeDuration = require("humanize-duration");
 
 module.exports = function ({ knex, commands }) {
 	const getThreadsBeforeDateCount = async (interval = 0, dateColumn = "created_at") => {
@@ -16,15 +17,17 @@ module.exports = function ({ knex, commands }) {
 		}
 	};
 
-	const getThreadsBeforeDate = async (interval = 0, dateColumn = "created_at") => {
+	const getThreadsBeforeDate = async (interval = 0, user) => {
 		if (!interval) {
 			const totalThreads = await knex.table("threads")
+				.where(user ? { close_id: user } : {})
 				.select();
 
 			return totalThreads;
 		} else {
 			const totalThreads = await knex.table("threads")
-				.where(dateColumn, '>', new Date(Date.now() - interval).toISOString().slice(0, 19).replace('T', ' '))
+				.where("close_at", '>', new Date(Date.now() - interval).toISOString().slice(0, 19).replace('T', ' '))
+				.where(user ? { close_id: user } : {})
 				.select();
 
 			return totalThreads;
@@ -51,13 +54,13 @@ module.exports = function ({ knex, commands }) {
 		return mods;
 	};
 
-	const generateResumeEmbed = (mods, interval = false) => {
+	const generateResumeEmbed = (mods, interval) => {
 		let embeds = [];
-		
+
 		if (mods.length === 0) {
 			embeds.push({
 				title: "Stats",
-				description: `No threads on this server ${interval ? `last ${interval} days` : "since this system"}`,
+				description: `No threads on this server ${interval ? `last ${humanizeDuration(interval)}` : "since this system"}`,
 				color: 0x2C70EE
 			});
 		}
@@ -65,7 +68,7 @@ module.exports = function ({ knex, commands }) {
 		for (let i = 0; i < mods.length; i += 50) {
 			embeds.push({
 				title: "Stats",
-				description: `Total threads on this server ${interval ? `last ${interval} days` : "since this system"}: **${mods.reduce((acc, mod) => acc + mod.count, 0)}**\n
+				description: `Total threads on this server ${interval ? `last ${humanizeDuration(interval)}` : "since this system"}: **${mods.reduce((acc, mod) => acc + mod.count, 0)}**\n
 				${mods.slice(i, i + 50).map((mod, idx) => `#${idx + 1 + embeds.length * 50}: <@${mod.id}> - ${mod.count} tickets`).join("\n	")}`,
 				color: 0x2C70EE
 			});
@@ -74,8 +77,8 @@ module.exports = function ({ knex, commands }) {
 		return embeds;
 	}
 
-	const processStats = async (msg, interval = false) => {
-		const threads = await getThreadsBeforeDate(interval ? 86400 * interval * 1000 : 0, "close_at");
+	const processStats = async (msg, interval = 0, user) => {
+		const threads = await getThreadsBeforeDate(interval, user);
 		const mods = await countThreadsPerMod(threads);
 
 		const sortedMods = Object.values(mods).sort((a, b) => b.count - a.count);
@@ -106,24 +109,22 @@ module.exports = function ({ knex, commands }) {
 
 
 	// Mods Stats Commands
-	commands.addInboxServerCommand('weeklyModsStats', [], async (msg) => {
+	commands.addInboxServerCommand('stats', "<duration:delay> [userId:userId]", async (msg, args) => {
 		if (!msg.member.roles.includes(config.ticketManagerRoleId))
 			return msg.channel.createMessage({ content: "You don't have the permission to use this command." });
 
-		processStats(msg, 7);
+		const user = args.userId;
+		const duration = args.duration;
+
+		processStats(msg, duration, user);
 	});
 
-	commands.addInboxServerCommand('monthlyModsStats', [], async (msg) => {
+	
+	commands.addInboxServerCommand('stats', [], async (msg, args) => {
 		if (!msg.member.roles.includes(config.ticketManagerRoleId))
 			return msg.channel.createMessage({ content: "You don't have the permission to use this command." });
 
-		processStats(msg, 31);
+		msg.channel.createMessage({ content: 'Usage: `!stats <duration> [userId]`\n\n`duration` is a human readable duration (e.g. `1d 2h 3m 4s`) or 0 for infinity\n`userId` is the id of the user you want to get stats for. If not provided, it will get stats for all users.' });
 	});
 
-	commands.addInboxServerCommand('totalModsStats', [], async (msg) => {
-		if (!msg.member.roles.includes(config.ticketManagerRoleId))
-			return msg.channel.createMessage({ content: "You don't have the permission to use this command." });
-
-		processStats(msg);
-	});
 }
